@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:medicine_reminder/controller/controller.dart';
 import 'package:medicine_reminder/model/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 class RegisterPage extends StatefulWidget {
   @override
   _RegisterPageState createState() => _RegisterPageState();
@@ -11,13 +12,72 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final AuthController _authController = AuthController();
-
+  // final String _baseUrl = "http://127.0.0.1:5000"; 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   bool _passwordVisible = false;
+
+  // void _register() async {
+  //   if (_formKey.currentState!.validate()) {
+  //     final user = UserModel(
+  //       email: _emailController.text.trim(),
+  //       firstName: _firstNameController.text.trim(),
+  //       lastName: _lastNameController.text.trim(),
+  //       password: _passwordController.text.trim(),
+  //     );
+  //     // try {
+  //     //   // Send POST request to the Python backend
+  //     //   final response = await http.post(
+  //     //     Uri.parse("$_baseUrl/add_user"),
+  //     //     headers: {"Content-Type": "application/json"},
+  //     //     body: json.encode({
+  //     //       "email": user.email,
+  //     //       "firstName": user.firstName,
+  //     //       "lastName": user.lastName,
+  //     //       "password": user.password,
+  //     //     }),
+  //     //   );
+
+  //     //   if (response.statusCode == 200) {
+  //     //     final responseData = json.decode(response.body);
+  //     //     ScaffoldMessenger.of(_formKey.currentContext!).showSnackBar(
+  //     //       SnackBar(content: Text(responseData['message'] ?? 'Registration successful')),
+  //     //     );
+  //     //   } else {
+  //     //     ScaffoldMessenger.of(_formKey.currentContext!).showSnackBar(
+  //     //       SnackBar(content: Text('Failed to register: ${response.body}')),
+  //     //     );
+  //     //   }
+  //     // } catch (error) {
+  //     //   ScaffoldMessenger.of(_formKey.currentContext!).showSnackBar(
+  //     //     SnackBar(content: Text('Error: $error')),
+  //     //   );
+  //     // }
+
+  //     // Register the user
+  //     final success = await _authController.registerUser(user);
+
+  //     if (success) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Registration successful!')),
+  //       );
+
+  //       // Save login status to shared preferences
+  //       SharedPreferences prefs = await SharedPreferences.getInstance();
+  //       await prefs.setBool('isLoggedIn', true);
+
+  //       Navigator.pushNamed(context, '/login');
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Email already exists!')),
+  //       );
+  //     }
+  //   }
+  // }
+
 
   void _register() async {
     if (_formKey.currentState!.validate()) {
@@ -28,22 +88,39 @@ class _RegisterPageState extends State<RegisterPage> {
         password: _passwordController.text.trim(),
       );
 
-      // Register the user
-      final success = await _authController.registerUser(user);
-
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration successful!')),
+      try {
+        // Send POST request to the Python backend
+        final response = await http.post(
+          Uri.parse("http://127.0.0.1:5000/add_user"), // Replace with your actual Flask API endpoint
+          headers: {"Content-Type": "application/json"},
+          body: json.encode({
+            "email": user.email,
+            "firstName": user.firstName,
+            "lastName": user.lastName,
+            "password": user.password,
+          }),
         );
 
-        // Save login status to shared preferences
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
+        if (response.statusCode == 200) {
+          final responseData = json.decode(response.body);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(responseData['message'] ?? 'Registration successful')),
+          );
 
-        Navigator.pushNamed(context, '/login');
-      } else {
+          // Save login status to shared preferences
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('isLoggedIn', true);
+
+          // Navigate to the login page
+          Navigator.pushNamed(context, '/login');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to register: ${response.body}')),
+          );
+        }
+      } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Email already exists!')),
+          SnackBar(content: Text('Error: $error')),
         );
       }
     }
