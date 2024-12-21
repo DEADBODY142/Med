@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:medicine_reminder/view/medicineschedule.dart';
+import 'package:file_picker/file_picker.dart';
 
 class AddMedicinePage extends StatefulWidget {
   @override
@@ -16,6 +17,13 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
   TextEditingController medicineNameController = TextEditingController();
   TextEditingController strengthController = TextEditingController();
   TextEditingController frequencyController = TextEditingController();
+  TimeOfDay? selectedMedicineTime;
+  String? imagePath;
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,13 +38,23 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
                 // Add Photo Section
                 Center(
                   child: InkWell(
-                    onTap: () {
-                      // Add functionality to upload photo
+                    onTap: () async {
+                      // Open file picker to select an image
+                      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+
+                      if (result != null) {
+                        String? filePath = result.files.single.path;
+                        if (filePath != null) {
+                          setState(() {
+                            imagePath = filePath; // Store the image path
+                          });
+                        }
+                      }
                     },
                     child: CircleAvatar(
                       radius: 40,
                       backgroundColor: Colors.grey[200],
-                      child: Icon(Icons.add_a_photo, size: 30, color: Colors.grey),
+                      child: imagePath == null ? Icon(Icons.add_a_photo, size: 30, color: Colors.grey) : null,
                     ),
                   ),
                 ),
@@ -118,51 +136,98 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
                       .toList(),
                 ),
 
+                buildLabel('Set Reminder Time'),
+                InkWell(
+                  onTap: () async {
+                    TimeOfDay? pickedTime = await showTimePicker(
+                      context: context,
+                      initialTime: selectedMedicineTime ?? TimeOfDay.now(),
+                    );
+                    if (pickedTime != null) {
+                      setState(() {
+                        selectedMedicineTime = pickedTime;
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          selectedMedicineTime != null
+                              ? '${selectedMedicineTime!.format(context)}'
+                              : 'Select Reminder Time',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        Icon(Icons.access_time, size: 18, color: Colors.grey),
+                      ],
+                    ),
+                  ),
+                ),
                 SizedBox(height: 20),
 
                 // Make Schedule Button
-                Center(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (medicineNameController.text.isNotEmpty && strengthController.text.isNotEmpty) {
-                        // Redirect to the schedule page with selected details
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => SchedulePage(
-                              startDate: startDate,
-                              finishDate: finishDate,
-                              selectedDays: selectedDays,
-                              // selectedTime: selectedTime,
-                              // selectedType: selectedType,
-                              // selectedAmount: selectedAmount,
-                            ),
-                          ),
-                        );
-                      } else {
-                        // Show an alert if essential fields are empty
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: Text('Error'),
-                            content: Text('Please fill in all required fields'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: Text('OK'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        if (medicineNameController.text.isNotEmpty && strengthController.text.isNotEmpty) {
+                          // Redirect to the schedule page with selected details
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SchedulePage(
+                                startDate: startDate,
+                                finishDate: finishDate,
+                                selectedDays: selectedDays,
+                                // selectedTime: selectedTime,
+                                // selectedType: selectedType,
+                                // selectedAmount: selectedAmount,
                               ),
-                            ],
-                          ),
-                        );
-                      }
-                    },
-                    child: Text('Make Schedule'),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                            ),
+                          );
+                        } else {
+                          // Show an alert if essential fields are empty
+                          showDialog(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: Text('Error'),
+                              content: Text('Please fill in all required fields'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text('OK'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                      },
+                      child: Text('Make Schedule'),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      ),
                     ),
-                  ),
+                    SizedBox(width: 16),
+                    IconButton(
+                      icon: Icon(
+                        Icons.mic, // Placeholder icon for voice speech
+                        size: 28,
+                        color: Colors.blue,
+                      ),
+                      onPressed: () {
+                        // Placeholder: Do nothing for now
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

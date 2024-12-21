@@ -12,6 +12,20 @@ class UserModel {
     required this.password,
   });
 }
+class Appointment {
+  final String doctorName;
+  final String specialty;
+  final String appointmentTime;
+  final String appointmentDate;
+
+  Appointment({
+    required this.doctorName,
+    required this.specialty,
+    required this.appointmentTime,
+    required this.appointmentDate,
+  });
+}
+
 
 class Medicine {
   final String name;

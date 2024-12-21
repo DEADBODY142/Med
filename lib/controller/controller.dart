@@ -94,4 +94,8 @@ class MedicineController {
     return true;  // Validation passed
   }
 }
+void _handleAddAppointment(Appointment appointment) {
+  // Handle the logic when an appointment is added, e.g., add it to a list.
+  print("Appointment added: ${appointment.doctorName}");
+}
 

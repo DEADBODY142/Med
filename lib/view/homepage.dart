@@ -5,6 +5,8 @@ import 'package:medicine_reminder/view/medicineschedule.dart'; // Import the sch
 import 'package:medicine_reminder/view/addmedicine.dart'; // Import the Add Medicine page
 import 'package:medicine_reminder/view/profile.dart';
 
+
+
 class HealthDashboard extends StatefulWidget {
   @override
   _HealthDashboardState createState() => _HealthDashboardState();
@@ -53,7 +55,7 @@ class _HealthDashboardState extends State<HealthDashboard> {
       appBar: AppBar(
         leading: Icon(Icons.medical_services),
         title: Text(
-          ['Health Dashboard', 'Add Medicine', 'Customer Profile'][_selectedIndex],
+          ['Dashboard', 'Add Medicine', 'Customer Profile'][_selectedIndex],
         ),
 
         backgroundColor: Colors.blue,
@@ -102,8 +104,7 @@ class HomePage extends StatelessWidget {
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundImage: NetworkImage(
-                        'https://via.placeholder.com/150'), // Replace with user's profile image
+                    backgroundImage: AssetImage('assets/pilll.jpg'),// Replace with user's profile image
                     radius: 25,
                   ),
                   const SizedBox(width: 12),
@@ -161,6 +162,7 @@ class HomePage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: const [
                   ServiceItem(icon: Icons.medical_services, label: 'Medicines'),
+                  ServiceItem(icon: Icons.calendar_today, label: 'Appointment'),
                   ServiceItem(icon: Icons.local_hospital, label: 'Ambulance'),
                 ],
               ),
@@ -185,27 +187,46 @@ class HomePage extends StatelessWidget {
 
               // Added Medicines Section
               const SizedBox(height: 20),
-              const Text(
-                'Your Medicines',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Material(
+                elevation: 4.0, // Add elevation for shadow effect
+                borderRadius: BorderRadius.circular(12.0), // Rounded corners
+                child: Container(
+                  padding: EdgeInsets.all(16.0), // Padding inside the container
+                  decoration: BoxDecoration(
+                    color: Colors.white, // Background color for the container
+                    borderRadius: BorderRadius.circular(12.0), // Same as Material for consistency
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Your Medicines',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      medicines.isEmpty
+                          ? const Text('No medicines added yet.')
+                          : ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(), // Prevent inner scrolling
+                        itemCount: medicines.length,
+                        itemBuilder: (context, index) {
+                          final medicine = medicines[index];
+                          return ListTile(
+                            title: Text(medicine.name),
+                            subtitle: Text('${medicine.type}, ${medicine.amount}'),
+                            trailing: Icon(Icons.arrow_forward),
+                            onTap: () {
+                              // Navigate to a detail page or perform an action on the selected medicine
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              medicines.isEmpty
-                  ? const Text('No medicines added yet.')
-                  : ListView.builder(
-                shrinkWrap: true,
-                itemCount: medicines.length,
-                itemBuilder: (context, index) {
-                  final medicine = medicines[index];
-                  return ListTile(
-                    title: Text(medicine.name),
-                    subtitle: Text('${medicine.type}, ${medicine.amount}'),
-                    trailing: Icon(Icons.arrow_forward),
-                    onTap: () {
-                      // Navigate to a detail page or perform an action on the selected medicine
-                    },
-                  );
-                },
-              ),
+
             ],
           ),
         ),
