@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:medicine_reminder/controller/controller.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
-import 'homepage.dart'; // Import the HealthDashboard page
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:medicine_reminder/view/homepage.dart'; // Import HealthDashboard instead of homepage
 
 class LoginPage extends StatefulWidget {
   @override
@@ -25,8 +25,8 @@ class _LoginPageState extends State<LoginPage> {
   void _checkLoginStatus() async {
     try {
       bool isLoggedIn = await _authController.checkLoginStatus();
-      if (isLoggedIn) {
-        // If the user is already logged in, navigate directly to the HealthDashboard
+      if (isLoggedIn && mounted) {  // Added mounted check for safety
+        // Navigate to HealthDashboard instead of HomePage
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HealthDashboard()),
@@ -37,41 +37,56 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // Simulated login function with SharedPreferences
+  // Login function
   void _login() async {
     if (_formKey.currentState!.validate()) {
-      final success = await _authController.loginUser(
-        _emailController.text,
-        _passwordController.text,
-      );
-
-      if (success) {
-        // Save login status using SharedPreferences
-        await _authController.setLoginStatus(true);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login successful!')),
+      try {
+        final success = await _authController.loginUser(
+          _emailController.text,
+          _passwordController.text,
         );
 
-        // Navigate to the HealthDashboard page (home page)
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HealthDashboard()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Invalid credentials')),
-        );
+        if (success && mounted) {  // Added mounted check
+          // Save login status
+          await _authController.setLoginStatus(true);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Login successful!')),
+          );
+
+          // Navigate to HealthDashboard
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HealthDashboard()),
+          );
+        } else if (mounted) {  // Added mounted check
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid credentials')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {  // Added mounted check
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+          );
+        }
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sign In'),
-        backgroundColor: Colors.blue, // Blue color for the app bar
+        title: const Text('Sign In'),
+        backgroundColor: Colors.blue,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -79,52 +94,53 @@ class _LoginPageState extends State<LoginPage> {
           key: _formKey,
           child: ListView(
             children: [
-              Center(
-                child: Icon(Icons.medical_services, size: 50, color: Colors.blue), // Medicine-related icon at the top
+              const Center(
+                child: Icon(Icons.medical_services, size: 50, color: Colors.blue),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _emailController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Email',
                   prefixIcon: Icon(Icons.email, color: Colors.blue),
                   border: OutlineInputBorder(),
                   contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                 ),
                 validator: (value) {
-                  if (value!.isEmpty) return 'Enter your email';
+                  if (value == null || value.isEmpty) return 'Enter your email';
                   if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
                     return 'Enter a valid email';
                   }
                   return null;
                 },
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _passwordController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Password',
                   prefixIcon: Icon(Icons.lock, color: Colors.blue),
                   border: OutlineInputBorder(),
                   contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                 ),
                 obscureText: true,
-                validator: (value) => value!.isEmpty ? 'Enter your password' : null,
+                validator: (value) =>
+                value == null || value.isEmpty ? 'Enter your password' : null,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _login,
-                child: Text('Sign In'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue, // Blue color for the button
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  textStyle: TextStyle(fontSize: 16),
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  textStyle: const TextStyle(fontSize: 16),
                 ),
+                child: const Text('Sign In'),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               TextButton(
                 onPressed: () => Navigator.pushNamed(context, '/register'),
-                child: Text('New here? Register'),
+                child: const Text('New here? Register'),
               ),
             ],
           ),

@@ -2,7 +2,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:medicine_reminder/model/user_model.dart';
 
 class AuthController {
-  // Log in the user by verifying their email and password
   Future<bool> loginUser(String email, String password) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -69,3 +68,30 @@ class AuthController {
     );
   }
 }
+class MedicineController {
+  // List to store medicines
+  List<Medicine> medicines = [];
+
+  // Function to add a new medicine
+  void addMedicine(Medicine medicine) {
+    medicines.add(medicine);
+  }
+
+  // Function to get all medicines
+  List<Medicine> getMedicines() {
+    return medicines;
+  }
+
+  // Validation for adding a medicine
+  bool validateMedicineFields({
+    required String name,
+    required String strength,
+    required String frequency,
+  }) {
+    if (name.isEmpty || strength.isEmpty || frequency.isEmpty) {
+      return false;  // Validation failed
+    }
+    return true;  // Validation passed
+  }
+}
+
