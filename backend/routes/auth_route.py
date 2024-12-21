@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from app.services.user_service import UserService
+from Medicinereminder.services.user_service import UserService
 
 auth_routes = Blueprint('auth_routes', __name__)
 user_service = UserService()

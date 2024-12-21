@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:medicine_reminder/view/medicineschedule.dart';
 
 class AddMedicinePage extends StatefulWidget {
@@ -16,6 +18,96 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
   TextEditingController medicineNameController = TextEditingController();
   TextEditingController strengthController = TextEditingController();
   TextEditingController frequencyController = TextEditingController();
+
+  // Function to send data to the Flask backend
+  Future<void> submitData() async {
+    if (medicineNameController.text.isNotEmpty && strengthController.text.isNotEmpty) {
+      try {
+        // Prepare the data to be sent
+        Map<String, dynamic> data = {
+          'medicineName': medicineNameController.text,
+          'strength': strengthController.text,
+          'selectedTime': selectedTime,
+          'selectedType': selectedType,
+          'selectedAmount': selectedAmount,
+          'startDate': startDate?.toIso8601String(),
+          'finishDate': finishDate?.toIso8601String(),
+          'selectedDays': selectedDays,
+          'frequency': frequencyController.text,
+        };
+
+        // Send the data to the Flask backend
+        final response = await http.post(
+          Uri.parse('http://127.0.0.1:5000/add_medicine'),  // Replace with your Flask API URL
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: json.encode(data),
+        );
+
+        if (response.statusCode == 200) {
+          // If the request is successful, navigate to the next page
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SchedulePage(
+                startDate: startDate,
+                finishDate: finishDate,
+                selectedDays: selectedDays,
+                // You can pass more data if necessary
+              ),
+            ),
+          );
+        } else {
+          // Handle error response from the server
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: Text('Error'),
+              content: Text('Failed to add medicine'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      } catch (e) {
+        // Handle network or any other errors
+        print("Error sending data: $e");
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text('Error'),
+            content: Text('An error occurred while sending data.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } else {
+      // Show alert if fields are empty
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text('Error'),
+          content: Text('Please fill in all required fields'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,41 +220,7 @@ class _AddMedicinePageState extends State<AddMedicinePage> {
                 // Make Schedule Button
                 Center(
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (medicineNameController.text.isNotEmpty && strengthController.text.isNotEmpty) {
-                        // Redirect to the schedule page with selected details
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => SchedulePage(
-                              startDate: startDate,
-                              finishDate: finishDate,
-                              selectedDays: selectedDays,
-                              // selectedTime: selectedTime,
-                              // selectedType: selectedType,
-                              // selectedAmount: selectedAmount,
-                            ),
-                          ),
-                        );
-                      } else {
-                        // Show an alert if essential fields are empty
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: Text('Error'),
-                            content: Text('Please fill in all required fields'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: Text('OK'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                    },
+                    onPressed: submitData,
                     child: Text('Make Schedule'),
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),

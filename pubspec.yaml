@@ -32,8 +32,10 @@ dependencies:
     sdk: flutter
   http: ^1.2.2
   shared_preferences: ^2.0.18
-
-
+  image_picker: ^0.8.5+3  # Use the latest stable version, or check the pub.dev page for updates
+  android_alarm_manager_plus: ^3.0.1
+  flutter_local_notifications: ^13.0.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

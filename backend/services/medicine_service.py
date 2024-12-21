@@ -13,8 +13,13 @@ def init_db(db_path):
             medicine_id INTEGER PRIMARY KEY AUTOINCREMENT,
             medicine_name TEXT NOT NULL,
             doze TEXT NOT NULL,
+            timing TEXT NOT NULL,
+            type TEXT NOT NULL,
+            amount TEXT NOT NULL, 
+            frequency TEXT NOT NULL,
             start_date DATE NOT NULL,
             end_date DATE NOT NULL,
+            days TEXT NOT NULL, 
             user_id INTEGER NOT NULL,
             medicine_image TEXT,
             FOREIGN KEY (user_id) REFERENCES users(id)
@@ -24,17 +29,23 @@ def init_db(db_path):
     conn.close()
 
 class MedicineService:
-    def add_medicine(self, name, doze, start_date, end_date, user_id, medicine_image):
+    def __init__(self):
+        self.db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../models/medicine.db'))
+        print(f"Database Path: {self.db_path}")
+        init_db(self.db_path)  # Initialize the database and create the table if it doesn't exist
+
+    def add_medicine(self, med_name, doze, timing, type, amount, frequency, start_date, end_date, days, user_id, medicine_image):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         try:
+            timing_json = json.dumps(timing) if isinstance(timing, list) else timing
+            days_json = json.dumps(days) if isinstance(days, list) else days
             # Insert user into the registration table
             cursor.execute('''
-                INSERT INTO medicines (medicine_name, doze, start_date, end_date, user_id, medicine_image)
-                VALUES (?, ?, ?, ?)
-                ''', (name, doze, start_date, end_date, user_id, medicine_image))
+                INSERT INTO medicine (medicine_name, doze, timing, type, amount, frequency, start_date, end_date, days, user_id, medicine_image)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (med_name, doze, timing_json, type, amount, frequency, start_date, end_date, days_json, user_id, medicine_image))
             conn.commit()
-            conn.close()
             
             # Check if the row was inserted
             if cursor.rowcount > 0:
@@ -54,3 +65,5 @@ class MedicineService:
         finally:
             # Close the database connection
             conn.close()
+
+            
