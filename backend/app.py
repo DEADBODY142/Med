@@ -1,6 +1,8 @@
-from flask import Flask, request, jsonify
+import base64
+from io import BytesIO
+from flask import Flask, json, request, jsonify
 from flask_cors import CORS
-import sqlite3
+import sqlite3,os
 
 app = Flask(__name__)
 CORS(app)
@@ -93,61 +95,150 @@ def add_medicine():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS medicines (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                strength TEXT NOT NULL,
-                selected_time TEXT,
-                selected_type TEXT,
-                selected_amount TEXT,
+                medicine_name TEXT,
+                frequency TEXT,
                 start_date TEXT,
                 finish_date TEXT,
-                selected_days TEXT,
-                frequency TEXT
+                selected_type TEXT,
+                selected_amount TEXT,
+                reminder_time TEXT,
+                image_path TEXT
             )
         ''')
         conn.commit()
         # conn.close()
         # Extract the data from the incoming JSON
-        data = request.get_json()
+        if 'data' not in request.form:
+            return jsonify({"error": "'data' field is missing from the request"}), 400
         
-        # Extract necessary fields from the data (adjust according to the keys you send)
-        medicine_name = data.get('medicineName')
-        strength = data.get('strength')
-        selected_time = data.get('selectedTime')
-        selected_type = data.get('selectedType')
-        selected_amount = data.get('selectedAmount')
-        start_date = data.get('startDate')
-        finish_date = data.get('finishDate')
-        selected_days = data.get('selectedDays')
+        # Get JSON data from the 'data' field in form-data
+        data = json.loads(request.form['data'])  # Extract the 'data' field which is JSON
+        print(f"Received data: {data}")  # Debugging print statement
+
+        # Extract the fields from the JSON data
+        medicine_name = data.get('medicine_name')
         frequency = data.get('frequency')
+        start_date = data.get('start_date')
+        finish_date = data.get('finish_date')
+        selected_type = data.get('selected_type')
+        selected_amount = data.get('selected_amount')
+        reminder_time = data.get('reminder_time')
+        if not all([medicine_name, frequency, start_date, finish_date,selected_type,selected_amount,reminder_time]):
+            return jsonify({"error": "All fields are required"}), 400
 
-        # Handle the data (e.g., save to a database or process it)
-        # For now, just print it
-        print(f'Medicine Name: {medicine_name}')
-        print(f'Strength: {strength}')
-        print(f'Selected Time: {selected_time}')
-        print(f'Selected Type: {selected_type}')
-        print(f'Selected Amount: {selected_amount}')
-        print(f'Start Date: {start_date}')
-        print(f'Finish Date: {finish_date}')
-        print(f'Selected Days: {selected_days}')
-        print(f'Frequency: {frequency}')
-        # wat = conn.cursor()
-        selected_days_str = ','.join(selected_days) if isinstance(selected_days, list) else ''
+        # base64_image = data.get('image')
+        # filename = data.get('filename')
+
+        # # Decode the base64 image
+        # if base64_image:
+        #     image_data = base64.b64decode(base64_image)
+        #     image = BytesIO(image_data)
+        #     image_path = os.path.join('uploads', filename)
+            
+        #     # Save the image
+        #     with open(image_path, 'wb') as img_file:
+        #         img_file.write(image_data)
+        #     print(f"Image saved at {image_path}")
+
+
+        
+        # Debugging: Print the data
+        print(f"Medicine Name: {medicine_name}, Frequency: {frequency}, Reminder Time: {reminder_time}")
+
+        # Image handling (if exists)
+        image_path = None
+        if 'image' in request.files:
+            image = request.files['image']
+            # Save the image in the uploads folder
+            image_path = os.path.join('uploads', image.filename)
+            image.save(image_path)
+            print(f"Image saved: {image.filename}")
+        else:
+            print("No image received")
+
         cursor.execute('''
-            INSERT INTO medicines (name, strength, selected_time, selected_type, selected_amount, start_date, finish_date, selected_days, frequency)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (medicine_name, strength, selected_time, selected_type, selected_amount, start_date, finish_date, selected_days_str, frequency))
+            INSERT INTO medicines (medicine_name, frequency, start_date, finish_date, selected_type, selected_amount, reminder_time, image_path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (medicine_name, frequency, start_date, finish_date, selected_type, selected_amount, reminder_time, image_path))
 
-        # Commit the transaction and close the connection
+        # Commit the transaction
         conn.commit()
         conn.close()
 
-        return jsonify({"message": "Medicine added successfully!"}), 200
+        return jsonify({"status": "success", "message": "Medicine added successfully"}), 200
+
+    except Exception as e:
+        # If error occurs, return error response with message
+        print(f"Error: {str(e)}")  # Log the exception for debugging
+        return jsonify({"error": str(e)}), 400
+        
+        
+        
+        
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
 
+
+@app.route('/add_reminder', methods=['POST'])
+def add_reminder():
+    try:
+        conn = sqlite3.connect('backend\medicine.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS remainder (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            mid TEXT,
+            uid TEXT,
+            time TEXT,
+            msg TEXT,
+            FOREIGN KEY (mid) REFERENCES medicines(mid),
+            FOREIGN KEY (uid) REFERENCES registration(uid)
+        );'''
+        )
+        conn.commit()
+        data = request.get_json()
+
+        # Input validation
+        time = data.get('time')
+        msg = data.get('msg')
+        if not time or not msg:
+            return jsonify({'error': 'All fields are required'}), 400
+        return jsonify({"status": "success", "message": "Reminder added successfully"}), 200
+    except:
+        return jsonify({"error": "An error occurred while adding reminder"}), 500
+
+
+@app.route('/appointment', methods=['POST'])
+def appointment():
+    try:
+        conn = sqlite3.connect('backend\medicine.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS appointment (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            speciality TEXT,
+            date TEXT,
+            time TEXT,
+            uid INT,
+            FOREIGN KEY (uid) REFERENCES registration(uid)
+        );'''
+        )
+        conn.commit()
+        data = request.get_json()
+
+        # Input validation
+        name = data.get('name')
+        speciality = data.get('speciality')
+        date = data.get('date')
+        time = data.get('time')
+        if not name or not speciality or not date or not time:
+            return jsonify({'error': 'All fields are required'}), 400
+        return jsonify({"status": "success", "message": "Reminder added successfully"}), 200
+    except:
+        return jsonify({"error": "An error occurred while adding reminder"}), 500
 
 
 
